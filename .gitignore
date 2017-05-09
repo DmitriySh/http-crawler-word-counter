@@ -1,4 +1,4 @@
-va template
+### Java template
 # Compiled class file
 *.class
 
@@ -14,20 +14,20 @@ va template
 # Maven
 target/
 
-# Gradle
-!/gradle/wrapper/gradle-wrapper.jar
-.gradle/
-*/build/
-build/
-out/
-
-# Package Files #
+# Package Files
 *.jar
 *.war
 *.ear
 *.zip
 *.tar.gz
 *.rar
+
+# Gradle
+!/gradle/wrapper/gradle-wrapper.jar
+.gradle/
+*/build/
+build/
+out/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
@@ -51,4 +51,3 @@ hs_err_pid*
 performance*.log
 */logs/
 logs/
-
