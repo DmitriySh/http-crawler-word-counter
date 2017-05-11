@@ -70,8 +70,6 @@ public class WebAccessController {
     }
 
     protected void acquireAccess(Runnable task) {
-        logger.debug("Thread: {} try to get web access on {} sec",
-                Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
         while (!acquire()) {
             // nothing to do
         }
@@ -81,11 +79,11 @@ public class WebAccessController {
     }
 
     private void release() {
-        logger.debug("thread: {} release blocks on {} sec",
-                Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
         final int currentBlock = defineCurrentBlock();
         final int left = (currentBlock - BLOCK_OFFSET + ring.length) % ring.length;
         final int right = (currentBlock + BLOCK_OFFSET + 1) % ring.length;
+        logger.debug("thread: {} release blocks [{}] -> [{}] on {} sec",
+                Thread.currentThread().getName(), right, left, System.currentTimeMillis() / 1000);
         // right -> left
         for (int block = right; block != left; block = (block + 1) % ring.length/*nextBlock*/) {
             Semaphore semaphore = ring[block];
@@ -95,9 +93,14 @@ public class WebAccessController {
     }
 
     private boolean acquire() {
+        int block = defineCurrentBlock();
         try {
-            Semaphore semaphore = ring[defineCurrentBlock()];
-            return semaphore.tryAcquire(defineWaitTimeout(), MILLISECONDS);
+            if (ring[block].tryAcquire(defineWaitTimeout(), MILLISECONDS)) {
+                logger.debug("thread: {} acquire block [{}] on {} sec",
+                        Thread.currentThread().getName(), block, System.currentTimeMillis() / 1000);
+                return true;
+            }
+            return false;
         } catch (InterruptedException ex) {
             return false;
         }
