@@ -1,13 +1,21 @@
 package ru.shishmakov.concurrent;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static ru.shishmakov.concurrent.Threads.STOP_TIMEOUT_SEC;
+import static ru.shishmakov.concurrent.Threads.sleepInterrupted;
 
 /**
  * @author Dmitriy Shishmakov on 10.05.17
@@ -15,44 +23,98 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class WebAccessController {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final int DEFAULT_CAPACITY = 60;
+    private static final int BLOCK_OFFSET = DEFAULT_CAPACITY / 6;
 
-    private final Semaphore[] blocks;
+    private final String NAME = this.getClass().getSimpleName();
+    private final AtomicBoolean accessState = new AtomicBoolean(true);
+    private final CountDownLatch awaitStop = new CountDownLatch(1);
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Semaphore[] ring;
     private final int ratePerSecond;
 
     public WebAccessController(int ratePerSecond) {
         this.ratePerSecond = ratePerSecond;
-        this.blocks = IntStream.range(0, DEFAULT_CAPACITY)
+        this.ring = IntStream.range(0, DEFAULT_CAPACITY)
                 .boxed()
                 .map(i -> new Semaphore(ratePerSecond))
                 .toArray(Semaphore[]::new);
     }
 
-    public void acquireAccess() {
-        while (!acquire()) {
+    public void start() {
+        executor.execute(() -> {
+            logger.info("{} started", Thread.currentThread().getName());
+            try {
+                while (accessState.get() && !Thread.currentThread().isInterrupted()) {
+                    release();
+                    sleepInterrupted(5, SECONDS);
+                }
+            } catch (Exception e) {
+                logger.error("{} error in time of processing", NAME, e);
+            } finally {
+                shutdownWebAccessor();
+                awaitStop.countDown();
+            }
+        });
+    }
 
+    public void stop() {
+        logger.info("{} stopping...", NAME);
+        try {
+            shutdownWebAccessor();
+            MoreExecutors.shutdownAndAwaitTermination(executor, STOP_TIMEOUT_SEC, SECONDS);
+            awaitStop.await(2, SECONDS);
+            logger.info("{} stopped", NAME);
+        } catch (Exception e) {
+            logger.error("{} error in time of stopping", NAME, e);
+        }
+    }
+
+    protected void acquireAccess(Runnable task) {
+        logger.debug("Thread: {} try to get web access on {} sec",
+                Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
+        while (!acquire()) {
+            // nothing to do
+        }
+        logger.debug("thread: {} run task on {} sec",
+                Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
+        task.run();
+    }
+
+    private void release() {
+        logger.debug("thread: {} release blocks on {} sec",
+                Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
+        final int currentBlock = defineCurrentBlock();
+        final int left = (currentBlock - BLOCK_OFFSET + ring.length) % ring.length;
+        final int right = (currentBlock + BLOCK_OFFSET + 1) % ring.length;
+        // right -> left
+        for (int block = right; block != left; block = (block + 1) % ring.length/*nextBlock*/) {
+            Semaphore semaphore = ring[block];
+            semaphore.drainPermits();
+            semaphore.release(ratePerSecond);
         }
     }
 
     private boolean acquire() {
         try {
-            return tryAcquire(defineBlock());
+            Semaphore semaphore = ring[defineCurrentBlock()];
+            return semaphore.tryAcquire(defineWaitTimeout(), MILLISECONDS);
         } catch (InterruptedException ex) {
             return false;
         }
     }
 
-    private int defineBlock() {
-        return Math.toIntExact((System.currentTimeMillis() / 1000) % blocks.length);
+    private int defineCurrentBlock() {
+        return Math.toIntExact((System.currentTimeMillis() / 1000) % ring.length);
     }
 
-    private boolean tryAcquire(int block) throws InterruptedException {
-        Semaphore semaphore = blocks[block];
-//        long ms = 20;
-        long timeout = delay();
-        return semaphore.tryAcquire(timeout, MILLISECONDS);
+    private long defineWaitTimeout() {
+        return 1000 / ratePerSecond;
     }
 
-    private long delay() {
-        return 0;
+
+    private void shutdownWebAccessor() {
+        if (accessState.compareAndSet(true, false)) {
+            logger.debug("{} waiting for shutdown process to complete...", NAME);
+        }
     }
 }
