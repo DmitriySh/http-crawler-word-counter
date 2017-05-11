@@ -20,13 +20,13 @@ public class JsoupExampleTest extends BaseTest {
     private static final String INNER_DOCUMENT_PATH = "src/test/resources/test_html.html";
 
     @Test
-    public void parseDocumentString() {
+    public void parseShouldParseHtmlFromString() {
         String html = "<html>" +
                 "<head><title>Text from &lt;Head&gt;</title></head>"
                 + "<body><p>Text from <b>&lt;Body&gt;</b></p></body>" +
                 "</html>";
 
-        Document doc = org.jsoup.Jsoup.parse(html);
+        Document doc = Jsoup.parse(html);
         String headTag = doc.getElementsByTag("head").text();
         String bodyTag = doc.getElementsByTag("body").text();
         String headText = doc.head().text();
@@ -38,10 +38,10 @@ public class JsoupExampleTest extends BaseTest {
     }
 
     @Test
-    public void parsingBodyFragment() {
+    public void parsingBodyFragmentShouldParseHtmlFromString() {
         String html = "<div><p>Text from fragment &lt;Div&gt;</p>";
 
-        Document doc = org.jsoup.Jsoup.parseBodyFragment(html);
+        Document doc = Jsoup.parseBodyFragment(html);
         String fragmentText = doc.body().text();
         String fragmentTag = doc.body().getElementsByTag("div").text();
         logger.info("\nFragment: {}", fragmentText);
@@ -50,8 +50,8 @@ public class JsoupExampleTest extends BaseTest {
     }
 
     @Test
-    public void loadHtmlDocumentByUrl() throws IOException {
-        Document doc = Jsoup.connect("https://ya.ru")
+    public void connectShouldCreateHttpConnectionAndLoadHtmlByUrl() throws IOException {
+        Document doc = Jsoup.connect("https://yandex.ru")
                 .userAgent("Mozilla/5.0")
                 .timeout(3_000)
                 .get();
@@ -65,7 +65,7 @@ public class JsoupExampleTest extends BaseTest {
     }
 
     @Test
-    public void loadHtmlDocumentByInnerPath() throws Exception {
+    public void parseShouldLoadHtmlByInnerPath() throws Exception {
         File input = new File(INNER_DOCUMENT_PATH);
         Document doc = Jsoup.parse(input, "UTF-8");
         String headText = doc.head().text();
@@ -78,17 +78,34 @@ public class JsoupExampleTest extends BaseTest {
     }
 
     @Test
-    public void resolveRelativeUrl() throws Exception {
+    public void parseShouldCreateHtmlDocumentAndResolveRelativeUrls() throws Exception {
         String baseUri = "http://jsoup.org";
         File input = new File(INNER_DOCUMENT_PATH);
         Document doc = Jsoup.parse(input, "UTF-8", baseUri);
-        List<String> links = doc.getElementsByTag("a").stream()
-                .map(el -> el.attr("abs:href"))
-                .map(StringUtils::trimToEmpty)
-                .collect(Collectors.toList());
+        List<String> links = getLinks(doc);
         logger.info("\nSite links: {}", links);
 
         assertFalse("List of links is not empty", links.isEmpty());
         links.forEach(l -> assertTrue("Link is illegal", StringUtils.startsWithIgnoreCase(l, baseUri)));
+    }
+
+    @Test
+    public void setBaseUriShouldResolveDocumentRelativeUrls() throws Exception {
+        String baseUri = "http://jsoup.org";
+        File input = new File(INNER_DOCUMENT_PATH);
+        Document doc = Jsoup.parse(input, "UTF-8");
+        doc.setBaseUri(baseUri);
+        List<String> links = getLinks(doc);
+        logger.info("\nSite links: {}", links);
+
+        assertFalse("List of links is not empty", links.isEmpty());
+        links.forEach(l -> assertTrue("Link is illegal", StringUtils.startsWithIgnoreCase(l, baseUri)));
+    }
+
+    private static List<String> getLinks(Document doc) {
+        return doc.getElementsByTag("a").stream()
+                .map(el -> el.attr("abs:href"))
+                .map(StringUtils::trimToEmpty)
+                .collect(Collectors.toList());
     }
 }

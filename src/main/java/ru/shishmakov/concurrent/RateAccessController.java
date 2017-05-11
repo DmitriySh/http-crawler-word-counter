@@ -20,7 +20,7 @@ import static ru.shishmakov.concurrent.Threads.sleepInterrupted;
 /**
  * @author Dmitriy Shishmakov on 10.05.17
  */
-public class WebAccessController {
+public class RateAccessController {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final int DEFAULT_CAPACITY = 60;
     private static final int BLOCK_OFFSET = DEFAULT_CAPACITY / 6;
@@ -32,7 +32,7 @@ public class WebAccessController {
     private final Semaphore[] ring;
     private final int ratePerSecond;
 
-    public WebAccessController(int ratePerSecond) {
+    public RateAccessController(int ratePerSecond) {
         this.ratePerSecond = ratePerSecond;
         this.ring = IntStream.range(0, DEFAULT_CAPACITY)
                 .boxed()
@@ -71,7 +71,7 @@ public class WebAccessController {
 
     protected void acquireAccess(Runnable task) {
         while (!acquire()) {
-            // nothing to do
+            // wait acquire
         }
         logger.debug("thread: {} run task on {} sec",
                 Thread.currentThread().getName(), System.currentTimeMillis() / 1000);

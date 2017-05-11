@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Dmitriy Shishmakov on 11.05.17
  */
-public class WebAccessControllerTest extends BaseTest {
+public class RateAccessControllerTest extends BaseTest {
 
     private ExecutorService pool;
 
@@ -42,7 +42,7 @@ public class WebAccessControllerTest extends BaseTest {
         Map<Long, Integer> statistics = new ConcurrentHashMap<>();
         CountDownLatch awaitTasks = new CountDownLatch(taskCount);
 
-        WebAccessController controller = new WebAccessController(ratePerSecond);
+        RateAccessController controller = new RateAccessController(ratePerSecond);
         controller.start();
         for (int i = 0; i < taskCount; i++) {
             pool.submit(() -> controller.acquireAccess(buildTask(statistics, awaitTasks)));
