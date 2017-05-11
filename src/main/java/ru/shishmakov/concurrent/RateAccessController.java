@@ -1,6 +1,7 @@
 package ru.shishmakov.concurrent;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,22 +23,21 @@ import static ru.shishmakov.concurrent.Threads.sleepInterrupted;
  */
 public class RateAccessController {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final int DEFAULT_CAPACITY = 60;
-    private static final int BLOCK_OFFSET = DEFAULT_CAPACITY / 6;
+    private static final int DEFAULT_RING_CAPACITY = 60;
+    private static final int BLOCK_OFFSET = DEFAULT_RING_CAPACITY / 6;
+    private static final int WORKER_TIMEOUT_SEC = 5;
 
     private final String NAME = this.getClass().getSimpleName();
     private final AtomicBoolean accessState = new AtomicBoolean(true);
     private final CountDownLatch awaitStop = new CountDownLatch(1);
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor;
     private final Semaphore[] ring;
     private final int ratePerSecond;
 
     public RateAccessController(int ratePerSecond) {
         this.ratePerSecond = ratePerSecond;
-        this.ring = IntStream.range(0, DEFAULT_CAPACITY)
-                .boxed()
-                .map(i -> new Semaphore(ratePerSecond))
-                .toArray(Semaphore[]::new);
+        this.ring = buildRingSemaphores(ratePerSecond);
+        this.executor = buildExecutorService();
     }
 
     public void start() {
@@ -46,7 +46,7 @@ public class RateAccessController {
             try {
                 while (accessState.get() && !Thread.currentThread().isInterrupted()) {
                     release();
-                    sleepInterrupted(5, SECONDS);
+                    sleepInterrupted(WORKER_TIMEOUT_SEC, SECONDS);
                 }
             } catch (Exception e) {
                 logger.error("{} error in time of processing", NAME, e);
@@ -119,5 +119,18 @@ public class RateAccessController {
         if (accessState.compareAndSet(true, false)) {
             logger.debug("{} waiting for shutdown process to complete...", NAME);
         }
+    }
+
+    private static ExecutorService buildExecutorService() {
+        return Executors.newSingleThreadExecutor(new BasicThreadFactory.Builder()
+                .namingPattern("access-worker %d")
+                .build());
+    }
+
+    private static Semaphore[] buildRingSemaphores(int ratePerSecond) {
+        return IntStream.range(0, DEFAULT_RING_CAPACITY)
+                .boxed()
+                .map(i -> new Semaphore(ratePerSecond))
+                .toArray(Semaphore[]::new);
     }
 }

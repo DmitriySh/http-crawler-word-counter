@@ -16,16 +16,17 @@ public class CrawlerCounter extends RecursiveTask<Void> {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String url;
+    private final int depth;
 
-    public CrawlerCounter(String url) {
+    public CrawlerCounter(String url, int depth) {
         this.url = url;
+        this.depth = depth;
     }
 
     @Override
     protected Void compute() {
         try {
             Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0")
                     .timeout(3_000)
                     .get();
         } catch (IOException e) {

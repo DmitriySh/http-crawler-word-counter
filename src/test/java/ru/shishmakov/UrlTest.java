@@ -3,10 +3,7 @@ package ru.shishmakov;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +18,6 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:d.shishmakov@corp.nekki.ru">Shishmakov Dmitriy</a>
  */
 public class UrlTest extends BaseTest {
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Test
     public void visitedUrlsShouldDefineOnlyUniquePath() throws Exception {

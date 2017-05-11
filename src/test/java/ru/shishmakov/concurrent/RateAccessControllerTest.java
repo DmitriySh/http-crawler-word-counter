@@ -1,6 +1,7 @@
 package ru.shishmakov.concurrent;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,8 +27,7 @@ public class RateAccessControllerTest extends BaseTest {
     @Override
     public void setUp() {
         super.setUp();
-        int cores = Runtime.getRuntime().availableProcessors();
-        pool = Executors.newFixedThreadPool(Math.min(2, cores));
+        pool = buildExecutorService();
     }
 
     @After
@@ -57,8 +57,16 @@ public class RateAccessControllerTest extends BaseTest {
     private Runnable buildTask(Map<Long, Integer> statistics, CountDownLatch awaitTasks) {
         return () -> {
             long currentSec = System.currentTimeMillis() / 1000;
-            statistics.compute(currentSec, (k, v) -> (v == null) ? 1 : v + 1);
+            statistics.merge(currentSec, 1, (old, inc) -> old + inc);
             awaitTasks.countDown();
         };
     }
+
+    private static ExecutorService buildExecutorService() {
+        return Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors() / 2),
+                new BasicThreadFactory.Builder()
+                        .namingPattern("request-worker %d")
+                        .build());
+    }
+
 }
