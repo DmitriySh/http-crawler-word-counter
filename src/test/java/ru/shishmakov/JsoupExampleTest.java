@@ -19,22 +19,6 @@ public class JsoupExampleTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final String INNER_DOCUMENT_PATH = "src/test/resources/test_html.html";
 
-    /*
-    * while(list of unvisited URLs is not empty) {
-    take URL from list
-    fetch content
-    record whatever it is you want to about the content
-    if content is HTML {
-        parse out URLs from links
-        foreach URL {
-           if it matches your rules
-              and it's not already in either the visited or unvisited list
-              add it to the unvisited list
-        }
-    }
-    }
-    * */
-
     @Test
     public void parseShouldParseHtmlFromString() {
         String html = "<html>" +

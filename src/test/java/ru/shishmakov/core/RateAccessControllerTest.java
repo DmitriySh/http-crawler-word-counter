@@ -1,4 +1,4 @@
-package ru.shishmakov.concurrent;
+package ru.shishmakov.core;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -42,13 +42,13 @@ public class RateAccessControllerTest extends BaseTest {
         Map<Long, Integer> statistics = new ConcurrentHashMap<>();
         CountDownLatch awaitTasks = new CountDownLatch(taskCount);
 
-        RateAccessController controller = new RateAccessController(ratePerSecond);
-        controller.start();
+        RateAccessController controller = new RateAccessController();
+        controller.setUp();
         for (int i = 0; i < taskCount; i++) {
             pool.submit(() -> controller.acquireAccess(buildTask(statistics, awaitTasks)));
         }
         awaitTasks.await();
-        controller.stop();
+        controller.tearDown();
         logger.info("Result map: {}", statistics);
 
         statistics.forEach((second, tasks) -> assertEquals("Excess rate per second", ratePerSecond, tasks.intValue()));
