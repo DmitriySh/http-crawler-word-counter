@@ -10,9 +10,11 @@ import org.jsoup.select.NodeVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -30,7 +32,7 @@ public class CrawlerUtil {
     /**
      * Need to fill unwanted symbols by your choice
      */
-    private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("([\\©\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\])");
+    private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("([\\·\\|\\©\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\])");
 
     public static List<String> simplifyUri(String... sourceUri) {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
@@ -73,7 +75,12 @@ public class CrawlerUtil {
                     String text = StringUtils.trimToNull(textNode.getWholeText());
                     if (StringUtils.isNotBlank(text)) {
                         Matcher matcher = UNWANTED_SYMBOLS.matcher(text);
-                        Collections.addAll(data, StringUtils.split(matcher.replaceAll(""), SPACE));
+                        for (String str : StringUtils.split(matcher.replaceAll(""), SPACE)) {
+                            str = StringUtils.normalizeSpace(str);
+                            if (StringUtils.isNotBlank(str)) {
+                                data.add(str);
+                            }
+                        }
                     }
                 }
             }
