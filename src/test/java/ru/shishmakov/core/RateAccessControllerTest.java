@@ -5,8 +5,13 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import ru.shishmakov.BaseTest;
+import ru.shishmakov.config.Config;
 
+import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -19,9 +24,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Dmitriy Shishmakov on 11.05.17
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = Config.class)
 public class RateAccessControllerTest extends BaseTest {
 
     private ExecutorService pool;
+
+    @Inject
+    private RateAccessController controller;
 
     @Before
     @Override
@@ -42,13 +52,10 @@ public class RateAccessControllerTest extends BaseTest {
         Map<Long, Integer> statistics = new ConcurrentHashMap<>();
         CountDownLatch awaitTasks = new CountDownLatch(taskCount);
 
-        RateAccessController controller = new RateAccessController();
-        controller.setUp();
         for (int i = 0; i < taskCount; i++) {
             pool.submit(() -> controller.acquireAccess(buildTask(statistics, awaitTasks)));
         }
         awaitTasks.await();
-        controller.tearDown();
         logger.info("Result map: {}", statistics);
 
         statistics.forEach((second, tasks) -> assertEquals("Excess rate per second", ratePerSecond, tasks.intValue()));
