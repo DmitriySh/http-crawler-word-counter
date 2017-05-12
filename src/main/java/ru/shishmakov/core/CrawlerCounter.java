@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -112,7 +113,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private void parseUri() throws Exception {
         Document doc = accessController.acquireAccess(buildRequestTask());
         countElementWords(doc.body());
-        if (visitedUri.isEmpty()) visitedUri.add(simplifyUri(uri)); // root of requests
+        if (visitedUri.isEmpty()) simplifyUri(uri).ifPresent(visitedUri::add); // root of requests
 
         if (depth - 1 > 0) {
             Stream<String> links = getStreamHrefLinks(doc)
@@ -133,12 +134,12 @@ public abstract class CrawlerCounter extends RecursiveAction {
 
     private void tryScanNextLinks(Stream<String> links) {
         final List<CrawlerCounter> nextCrawlers = links
+                .peek(uri -> simplifyUri(uri).ifPresent(visitedUri::add))
                 .map(uri -> {
                     CrawlerCounter nextCrawler = forkTask();
                     nextCrawler.setBaseUri(baseUri);
                     nextCrawler.setUri(uri);
                     nextCrawler.setDepth(depth - 1);
-                    visitedUri.add(simplifyUri(uri));
                     return nextCrawler;
                 }).collect(Collectors.toList());
         invokeAll(nextCrawlers);
@@ -155,8 +156,12 @@ public abstract class CrawlerCounter extends RecursiveAction {
 
     private Predicate<String> buildPredicateByVisitedUri() {
         return uri -> {
-            String value = simplifyUri(uri);
-            return !visitedUri.contains(value);
+            final Optional<String> value = simplifyUri(uri);
+            if (value.isPresent() && !visitedUri.contains(value.get())) {
+                return true;
+            } else if (value.isPresent() && visitedUri.contains(value.get())) {
+                return false;
+            } else return false;
         };
     }
 

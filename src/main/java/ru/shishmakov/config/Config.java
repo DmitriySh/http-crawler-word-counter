@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import ru.shishmakov.core.CrawlerCounter;
 import ru.shishmakov.core.RateAccessController;
+import ru.shishmakov.core.TopWordController;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,11 @@ public class Config {
     @Bean
     public RateAccessController rateAccessController() {
         return new RateAccessController();
+    }
+
+    @Bean
+    public TopWordController topWordController() {
+        return new TopWordController();
     }
 
     @Bean

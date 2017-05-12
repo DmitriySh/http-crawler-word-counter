@@ -10,11 +10,9 @@ import org.jsoup.select.NodeVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -38,20 +36,20 @@ public class CrawlerUtil {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
         final List<String> temp = new ArrayList<>(sourceUri.length);
         for (String uri : sourceUri) {
-            temp.add(simplifyUri(uri));
+            simplifyUri(uri).ifPresent(temp::add);
         }
         return temp;
     }
 
-    public static String simplifyUri(String sourceUri) {
+    public static Optional<String> simplifyUri(String sourceUri) {
         return Stream.of(sourceUri)
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)
                 .map(s -> StringUtils.substringBefore(s, "?"))
                 .map(s -> StringUtils.removeEnd(s, "/"))
                 .map(StringUtils::lowerCase)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Not found simplified uri: " + sourceUri));
+                .findFirst();
+
     }
 
     public static Stream<String> getStreamHrefLinks(Document doc) {
