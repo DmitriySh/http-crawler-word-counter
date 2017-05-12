@@ -24,8 +24,8 @@ public class Config {
         return new ConcurrentHashMap<>(100);
     }
 
-    @Bean(name = "visitedUrls")
-    public Set<String> visitedUrls() {
+    @Bean(name = "visitedUri")
+    public Set<String> visitedUri() {
         return Sets.newConcurrentHashSet();
     }
 

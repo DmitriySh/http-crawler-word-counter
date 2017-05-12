@@ -1,22 +1,31 @@
 package ru.shishmakov.core;
 
+import com.google.common.base.MoreObjects;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.shishmakov.util.CrawlerUtil;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static ru.shishmakov.util.CrawlerUtil.getLinks;
+import static ru.shishmakov.util.CrawlerUtil.getStreamHrefLinks;
+import static ru.shishmakov.util.CrawlerUtil.simplifyUri;
 
 /**
  * Parse content and fork tasks for next URLs
@@ -30,7 +39,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private static final String NAME = CrawlerCounter.class.getSimpleName();
     private final int number = generator.getAndIncrement();
     @Inject
-    private Set<String> visitedUrls;
+    private Set<String> visitedUri;
     @Inject
     private ConcurrentMap<String, Long> wordCounter;
     @Inject
@@ -79,32 +88,72 @@ public abstract class CrawlerCounter extends RecursiveAction {
     protected void compute() {
         logger.info("{}: {} starting task [uri: {}, depth: {}] ...", NAME, number, uri, depth);
         try {
-//            doJob();
+            parseUri();
         } catch (Exception e) {
             logger.error("Request error", e);
         }
         logger.info("{}: {} end", NAME, number);
     }
 
-    private void doJob() throws IOException {
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("number", number)
+                .add("baseUri", baseUri)
+                .add("uri", uri)
+                .add("depth", depth)
+                .toString();
+    }
+
+    private void parseUri() throws IOException {
         URL url = new URL(uri);
-        String baseUri = new URL(url.getProtocol(), url.getHost(), url.getPort(), "").toString();
         Document doc = Jsoup.parse(url, 3_000);
         doc.setBaseUri(baseUri);
-        String[] texts = doc.body().text().split(StringUtils.SPACE);
+
+        countElementWords(doc.body());
+        simplifyUri(uri).ifPresent(visitedUri::add);
 
         if (depth - 1 > 0) {
-            List<String> links = getLinks(doc);
+            Stream<String> links = getStreamHrefLinks(doc)
+                    .filter(buildPredicateByBaseUri())
+                    .filter(buildPredicateByVisitedUri());
             tryScanNextLinks(links);
         }
     }
 
-    private void tryScanNextLinks(List<String> links) {
-        CrawlerCounter nextCrawler = forkTask();
-        nextCrawler.setBaseUri(baseUri);
-        nextCrawler.setUri(uri/*other uri*/);
-        nextCrawler.setDepth(depth - 1);
-        logger.debug("Fork next {}: {}", NAME, nextCrawler.number);
-        invokeAll(nextCrawler);
+    private void countElementWords(Element body) {
+        List<String> textList = CrawlerUtil.getText(body);
+        textList.forEach(t -> wordCounter.merge(t, 1L, (old, inc) -> old + inc));
+    }
+
+    private void tryScanNextLinks(Stream<String> links) {
+        final List<CrawlerCounter> nextCrawlers = links.map(uri -> {
+            CrawlerCounter nextCrawler = forkTask();
+            nextCrawler.setBaseUri(baseUri);
+            nextCrawler.setUri(uri);
+            nextCrawler.setDepth(depth - 1);
+            return nextCrawler;
+        }).collect(Collectors.toList());
+        logger.debug("Fork next crawlers: {} ", nextCrawlers);
+        invokeAll(nextCrawlers);
+    }
+
+
+    private Predicate<String> buildPredicateByVisitedUri() {
+        return uri -> {
+            final Optional<String> value = simplifyUri(uri);
+            return value.isPresent() && !visitedUri.contains(value.get());
+        };
+    }
+
+    private Predicate<String> buildPredicateByBaseUri() {
+        return uri -> {
+            try {
+                return StringUtils.equalsIgnoreCase(new URL(baseUri).getHost(), new URL(uri).getHost());
+            } catch (MalformedURLException e) {
+                logger.error("Error on define host of uri", e);
+                return false;
+            }
+        };
     }
 }
