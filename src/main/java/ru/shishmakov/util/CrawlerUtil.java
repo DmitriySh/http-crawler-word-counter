@@ -11,20 +11,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.lang3.StringUtils.SPACE;
 
 /**
  * @author <a href="mailto:d.shishmakov@corp.nekki.ru">Shishmakov Dmitriy</a>
  */
 public class CrawlerUtil {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    /**
+     * Need to fill unwanted symbols by your choice
+     */
+    private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("([\\©\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\])");
 
     public static List<String> simplifyUri(String... sourceUri) {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
@@ -36,7 +41,7 @@ public class CrawlerUtil {
     }
 
     public static Optional<String> simplifyUri(String sourceUri) {
-        return Stream.of(checkNotNull(sourceUri, "source uri is empty"))
+        return Stream.of(sourceUri)
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)
                 .map(s -> StringUtils.substringBefore(s, "?"))
@@ -52,6 +57,10 @@ public class CrawlerUtil {
                 .filter(Objects::nonNull);
     }
 
+    /**
+     * Modified version of the method {@link Element#text()}
+     * to get list of string instead of a single text block
+     */
     public static List<String> getText(Element element) {
         checkNotNull(element, "element is null");
         final List<String> data = new ArrayList<>();
@@ -61,7 +70,8 @@ public class CrawlerUtil {
                     TextNode textNode = (TextNode) node;
                     String text = StringUtils.trimToNull(textNode.getWholeText());
                     if (StringUtils.isNotBlank(text)) {
-                        data.add(text);
+                        Matcher matcher = UNWANTED_SYMBOLS.matcher(text);
+                        Collections.addAll(data, StringUtils.split(matcher.replaceAll(""), SPACE));
                     }
                 }
             }

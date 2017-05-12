@@ -1,7 +1,6 @@
 package ru.shishmakov.core;
 
 import com.google.common.base.MoreObjects;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,6 +14,7 @@ import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -24,6 +24,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.lowerCase;
 import static ru.shishmakov.util.CrawlerUtil.getStreamHrefLinks;
 import static ru.shishmakov.util.CrawlerUtil.simplifyUri;
 
@@ -121,9 +123,13 @@ public abstract class CrawlerCounter extends RecursiveAction {
         }
     }
 
-    private void countElementWords(Element body) {
-        List<String> textList = CrawlerUtil.getText(body);
-        textList.forEach(t -> wordCounter.merge(t, 1L, (old, inc) -> old + inc));
+    private void countElementWords(Element element) {
+        if (Objects.isNull(element)) {
+            logger.warn("{}: {} skips uri: {}; site has no body element", NAME, number, uri);
+            return;
+        }
+        List<String> textList = CrawlerUtil.getText(element);
+        textList.forEach(t -> wordCounter.merge(lowerCase(t), 1L, (old, inc) -> old + inc));
     }
 
     private void tryScanNextLinks(Stream<String> links) {
@@ -149,7 +155,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private Predicate<String> buildPredicateByBaseUri() {
         return uri -> {
             try {
-                return StringUtils.equalsIgnoreCase(new URL(baseUri).getHost(), new URL(uri).getHost());
+                return equalsIgnoreCase(new URL(baseUri).getHost(), new URL(uri).getHost());
             } catch (MalformedURLException e) {
                 logger.error("Error on define host of uri", e);
                 return false;
