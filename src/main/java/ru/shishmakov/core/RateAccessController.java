@@ -37,6 +37,19 @@ public class RateAccessController {
     private ExecutorService executor;
     private Semaphore[] ring;
 
+    private static ExecutorService buildExecutorService() {
+        return Executors.newSingleThreadExecutor(new BasicThreadFactory.Builder()
+                .namingPattern("access-worker %d")
+                .build());
+    }
+
+    private static Semaphore[] buildRingSemaphores(int ratePerSecond) {
+        return IntStream.range(0, DEFAULT_RING_CAPACITY)
+                .boxed()
+                .map(i -> new Semaphore(ratePerSecond))
+                .toArray(Semaphore[]::new);
+    }
+
     @PostConstruct
     public void setUp() {
         logger.info("{} starting ...", NAME);
@@ -118,23 +131,9 @@ public class RateAccessController {
         return 1000 / DEFAULT_RATE_PER_SECOND;
     }
 
-
     private void shutdownWebAccessor() {
         if (accessState.compareAndSet(true, false)) {
             logger.debug("{} waiting for shutdown process to complete...", NAME);
         }
-    }
-
-    private static ExecutorService buildExecutorService() {
-        return Executors.newSingleThreadExecutor(new BasicThreadFactory.Builder()
-                .namingPattern("access-worker %d")
-                .build());
-    }
-
-    private static Semaphore[] buildRingSemaphores(int ratePerSecond) {
-        return IntStream.range(0, DEFAULT_RING_CAPACITY)
-                .boxed()
-                .map(i -> new Semaphore(ratePerSecond))
-                .toArray(Semaphore[]::new);
     }
 }

@@ -1,6 +1,5 @@
 package ru.shishmakov.core;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,14 +11,11 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static ru.shishmakov.util.CrawlerUtil.getLinks;
 
 /**
@@ -32,15 +28,13 @@ public abstract class CrawlerCounter extends RecursiveAction {
 
     private static final AtomicInteger generator = new AtomicInteger(1);
     private static final String NAME = CrawlerCounter.class.getSimpleName();
-
+    private final int number = generator.getAndIncrement();
     @Inject
     private Set<String> visitedUrls;
     @Inject
     private ConcurrentMap<String, Long> wordCounter;
     @Inject
     private RateAccessController accessController;
-
-    private final int number = generator.getAndIncrement();
     private String baseUri;
     private String uri;
     private int depth;
@@ -85,7 +79,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     protected void compute() {
         logger.info("{}: {} starting task [uri: {}, depth: {}] ...", NAME, number, uri, depth);
         try {
-            doJob();
+//            doJob();
         } catch (Exception e) {
             logger.error("Request error", e);
         }

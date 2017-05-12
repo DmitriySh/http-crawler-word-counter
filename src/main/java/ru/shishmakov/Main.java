@@ -24,14 +24,14 @@ public class Main {
     public static void main(String[] args) {
         logger.info("Start http-crawler process");
         try {
-            startCrawlerTask(args);
+            startCrawler(args);
         } catch (Exception e) {
             logger.error("Error in http-crawler process", e);
         }
         logger.info("End http-crawler process");
     }
 
-    private static void startCrawlerTask(String[] args) throws MalformedURLException {
+    private static void startCrawler(String[] args) throws MalformedURLException {
         String uri = StringUtils.trimToEmpty(args[0]);
         int depth = Integer.valueOf(args[1]);
         URL url = new URL(uri);

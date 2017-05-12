@@ -13,9 +13,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @author Dmitriy Shishmakov on 11.05.17
  */
 public final class Threads {
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
     public static final long STOP_TIMEOUT_SEC = 10;
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * Modified version of the method {@link Uninterruptibles#sleepUninterruptibly(long, TimeUnit)}

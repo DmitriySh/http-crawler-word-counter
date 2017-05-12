@@ -21,6 +21,10 @@ public class Word implements Comparable<Word> {
         this.quantity = quantity;
     }
 
+    private static Comparator<Word> buildMemberComparator() {
+        return Comparator.comparing(Word::getQuantity, reverseOrder());
+    }
+
     public String getWord() {
         return word;
     }
@@ -32,10 +36,6 @@ public class Word implements Comparable<Word> {
     @Override
     public int compareTo(@Nonnull Word other) {
         return COMPARATOR.compare(this, checkNotNull(other, "Word is null"));
-    }
-
-    private static Comparator<Word> buildMemberComparator() {
-        return Comparator.comparing(Word::getQuantity, reverseOrder());
     }
 
 }

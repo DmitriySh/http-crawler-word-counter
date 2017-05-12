@@ -1,4 +1,4 @@
-package ru.shishmakov.core;
+package ru.shishmakov;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
