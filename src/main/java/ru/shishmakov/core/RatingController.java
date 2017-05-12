@@ -24,7 +24,7 @@ public class RatingController {
     @Inject
     private ConcurrentMap<String, Long> wordCounter;
 
-    private static final int topRating = 20;
+    private static final int topRating = 100;
 
     public void startCrawler(String uri, String baseUri, int depth) {
         ForkJoinPool pool = new ForkJoinPool();
