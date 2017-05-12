@@ -14,7 +14,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static ru.shishmakov.core.CrawlerCounter.parsed;
+import static ru.shishmakov.util.CrawlerUtil.parsed;
 
 /**
  * @author <a href="mailto:d.shishmakov@corp.nekki.ru">Shishmakov Dmitriy</a>

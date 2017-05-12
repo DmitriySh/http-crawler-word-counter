@@ -17,8 +17,8 @@ import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static ru.shishmakov.concurrent.Threads.STOP_TIMEOUT_SEC;
-import static ru.shishmakov.concurrent.Threads.sleepInterrupted;
+import static ru.shishmakov.util.Threads.STOP_TIMEOUT_SEC;
+import static ru.shishmakov.util.Threads.sleepInterrupted;
 
 /**
  * @author Dmitriy Shishmakov on 10.05.17

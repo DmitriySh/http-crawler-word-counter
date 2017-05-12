@@ -14,12 +14,13 @@ import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static ru.shishmakov.util.CrawlerUtil.getLinks;
 
 /**
  * Parse content and fork tasks for next URLs
@@ -33,9 +34,9 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private static final String NAME = CrawlerCounter.class.getSimpleName();
 
     @Inject
-    private Set<String> visitedUrl;
+    private Set<String> visitedUrls;
     @Inject
-    private BlockingQueue<Word> wordCounter;
+    private ConcurrentMap<String, Long> wordCounter;
     @Inject
     private RateAccessController accessController;
 
@@ -83,8 +84,6 @@ public abstract class CrawlerCounter extends RecursiveAction {
     @Override
     protected void compute() {
         logger.info("{}: {} starting task [uri: {}, depth: {}] ...", NAME, number, uri, depth);
-        checkNotNull(visitedUrl);
-        checkNotNull(wordCounter);
         try {
             doJob();
         } catch (Exception e) {
@@ -113,24 +112,5 @@ public abstract class CrawlerCounter extends RecursiveAction {
         nextCrawler.setDepth(depth - 1);
         logger.debug("Fork next {}: {}", NAME, nextCrawler.number);
         invokeAll(nextCrawler);
-    }
-
-    @VisibleForTesting
-    static List<String> parsed(List<String> sources) {
-        return sources.stream()
-                .map(StringUtils::trimToNull)
-                .filter(Objects::nonNull)
-                .map(s -> StringUtils.substringBefore(s, "?"))
-                .map(s -> StringUtils.removeEnd(s, "/"))
-                .map(StringUtils::lowerCase)
-                .collect(Collectors.toList());
-    }
-
-    @VisibleForTesting
-    static List<String> getLinks(Document doc) {
-        return doc.getElementsByTag("a").stream()
-                .map(el -> el.attr("abs:href"))
-                .map(StringUtils::trimToEmpty)
-                .collect(Collectors.toList());
     }
 }

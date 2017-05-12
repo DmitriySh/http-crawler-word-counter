@@ -14,7 +14,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static ru.shishmakov.core.CrawlerCounter.getLinks;
+import static ru.shishmakov.util.CrawlerUtil.getLinks;
 
 public class JsoupExampleTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

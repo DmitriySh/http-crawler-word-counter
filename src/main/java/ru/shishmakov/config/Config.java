@@ -6,11 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import ru.shishmakov.core.CrawlerCounter;
 import ru.shishmakov.core.RateAccessController;
-import ru.shishmakov.core.Word;
 
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROTOTYPE;
 
@@ -21,12 +20,12 @@ import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROT
 public class Config {
 
     @Bean(name = "wordCounter")
-    public BlockingQueue<Word> wordCounter() {
-        return new PriorityBlockingQueue<>(100);
+    public ConcurrentMap<String, Long> wordCounter() {
+        return new ConcurrentHashMap<>(100);
     }
 
-    @Bean(name = "visitedUrl")
-    public Set<String> visitedUrl() {
+    @Bean(name = "visitedUrls")
+    public Set<String> visitedUrls() {
         return Sets.newConcurrentHashSet();
     }
 
