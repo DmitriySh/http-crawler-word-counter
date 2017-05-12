@@ -9,6 +9,8 @@ import ru.shishmakov.config.Config;
 import ru.shishmakov.core.CrawlerCounter;
 
 import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.ForkJoinPool;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -24,15 +26,17 @@ public class Main {
         try {
             startCrawlerTask(args);
         } catch (Exception e) {
-            logger.error("Error in time executing task", e);
+            logger.error("Error in http-crawler process", e);
         }
         logger.info("End http-crawler process");
     }
 
-    private static void startCrawlerTask(String[] args) {
-        String url = StringUtils.trimToEmpty(args[0]);
+    private static void startCrawlerTask(String[] args) throws MalformedURLException {
+        String uri = StringUtils.trimToEmpty(args[0]);
         int depth = Integer.valueOf(args[1]);
-        logger.debug("Incoming parameters url: {}, depth: {}", url, depth);
+        URL url = new URL(uri);
+        String baseUri = new URL(url.getProtocol(), url.getHost(), url.getPort(), "").toString();
+        logger.debug("Incoming parameters uri: {}, depth: {}", uri, depth);
 
         ForkJoinPool pool = new ForkJoinPool();
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
@@ -41,7 +45,8 @@ public class Main {
 
             logger.debug("Invoke crawler task ...");
             final CrawlerCounter task = context.getBean(CrawlerCounter.class);
-            task.setUrl(url);
+            task.setUri(uri);
+            task.setBaseUri(baseUri);
             task.setDepth(depth);
             pool.invoke(task);
         } finally {

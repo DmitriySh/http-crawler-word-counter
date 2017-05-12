@@ -1,4 +1,4 @@
-package ru.shishmakov;
+package ru.shishmakov.core;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -6,14 +6,15 @@ import org.jsoup.nodes.Document;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.shishmakov.BaseTest;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
+import static ru.shishmakov.core.CrawlerCounter.getLinks;
 
 public class JsoupExampleTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -102,10 +103,5 @@ public class JsoupExampleTest extends BaseTest {
         links.forEach(l -> assertTrue("Link is illegal", StringUtils.startsWithIgnoreCase(l, baseUri)));
     }
 
-    private static List<String> getLinks(Document doc) {
-        return doc.getElementsByTag("a").stream()
-                .map(el -> el.attr("abs:href"))
-                .map(StringUtils::trimToEmpty)
-                .collect(Collectors.toList());
-    }
+
 }
