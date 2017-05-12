@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.lang.invoke.MethodHandles;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -86,20 +83,21 @@ public class RateAccessController {
         }
     }
 
-    protected void acquireAccess(Runnable task) {
+    public <T> T acquireAccess(Callable<T> task) throws Exception {
         while (!acquire()) {
             // wait acquire
+            logger.trace("Thread: {} is waiting to acquire the monitor", Thread.currentThread().getName());
         }
         logger.debug("thread: {} run task on {} sec",
                 Thread.currentThread().getName(), System.currentTimeMillis() / 1000);
-        task.run();
+        return task.call();
     }
 
     private void release() {
         final int currentBlock = defineCurrentBlock();
         final int left = (currentBlock - BLOCK_OFFSET + ring.length) % ring.length;
         final int right = (currentBlock + BLOCK_OFFSET + 1) % ring.length;
-        logger.debug("thread: {} release blocks [{}] -> [{}] on {} sec",
+        logger.debug("Thread: {} release blocks [{}] -> [{}] on {} sec",
                 Thread.currentThread().getName(), right, left, System.currentTimeMillis() / 1000);
         // right -> left
         for (int block = right; block != left; block = (block + 1) % ring.length/*nextBlock*/) {
@@ -113,7 +111,7 @@ public class RateAccessController {
         int block = defineCurrentBlock();
         try {
             if (ring[block].tryAcquire(defineWaitTimeout(), MILLISECONDS)) {
-                logger.debug("thread: {} acquire block [{}] on {} sec",
+                logger.debug("Thread: {} acquire block [{}] on {} sec",
                         Thread.currentThread().getName(), block, System.currentTimeMillis() / 1000);
                 return true;
             }

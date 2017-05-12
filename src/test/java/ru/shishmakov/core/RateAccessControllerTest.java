@@ -13,10 +13,7 @@ import ru.shishmakov.config.Config;
 
 import javax.inject.Inject;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -61,11 +58,12 @@ public class RateAccessControllerTest extends BaseTest {
         statistics.forEach((second, tasks) -> assertEquals("Excess rate per second", ratePerSecond, tasks.intValue()));
     }
 
-    private Runnable buildTask(Map<Long, Integer> statistics, CountDownLatch awaitTasks) {
+    private Callable<Void> buildTask(Map<Long, Integer> statistics, CountDownLatch awaitTasks) {
         return () -> {
             long currentSec = System.currentTimeMillis() / 1000;
             statistics.merge(currentSec, 1, (old, inc) -> old + inc);
             awaitTasks.countDown();
+            return null;
         };
     }
 

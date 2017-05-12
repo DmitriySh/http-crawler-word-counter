@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,19 +38,20 @@ public class CrawlerUtil {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
         final List<String> temp = new ArrayList<>(sourceUri.length);
         for (String uri : sourceUri) {
-            simplifyUri(uri).ifPresent(temp::add);
+            temp.add(simplifyUri(uri));
         }
         return temp;
     }
 
-    public static Optional<String> simplifyUri(String sourceUri) {
+    public static String simplifyUri(String sourceUri) {
         return Stream.of(sourceUri)
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)
                 .map(s -> StringUtils.substringBefore(s, "?"))
                 .map(s -> StringUtils.removeEnd(s, "/"))
                 .map(StringUtils::lowerCase)
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Not found simplified uri: " + sourceUri));
     }
 
     public static Stream<String> getStreamHrefLinks(Document doc) {
