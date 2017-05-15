@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.shishmakov.config.CrawlerConfig;
 import ru.shishmakov.util.CrawlerUtil;
 
 import javax.inject.Inject;
@@ -27,8 +28,6 @@ import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
-import static ru.shishmakov.util.CrawlerUtil.getStreamHrefLinks;
-import static ru.shishmakov.util.CrawlerUtil.simplifyUri;
 
 /**
  * Parse content and fork tasks for next URLs
@@ -47,6 +46,11 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private ConcurrentMap<String, Long> wordCounter;
     @Inject
     private RateAccessController accessController;
+    @Inject
+    private CrawlerUtil crawlerUtil;
+    @Inject
+    private CrawlerConfig crawlerConfig;
+
     private String baseUri;
     private String uri;
     private int depth;
@@ -113,10 +117,10 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private void parseUri() throws Exception {
         Document doc = accessController.acquireAccess(buildRequestTask());
         countElementWords(doc.body());
-        if (visitedUri.isEmpty()) simplifyUri(uri).ifPresent(visitedUri::add); // root of requests
+        if (visitedUri.isEmpty()) crawlerUtil.simplifyUri(uri).ifPresent(visitedUri::add); // root of requests
 
         if (depth - 1 > 0) {
-            Stream<String> links = getStreamHrefLinks(doc)
+            Stream<String> links = crawlerUtil.getStreamHrefLinks(doc)
                     .filter(buildPredicateByBaseUri())
                     .filter(buildPredicateByVisitedUri());
             tryScanNextLinks(links);
@@ -128,13 +132,13 @@ public abstract class CrawlerCounter extends RecursiveAction {
             logger.warn("{}: {} skips uri: {}; site has no body element", NAME, number, uri);
             return;
         }
-        List<String> textList = CrawlerUtil.getText(element);
+        List<String> textList = crawlerUtil.getText(element);
         textList.forEach(t -> wordCounter.merge(lowerCase(t), 1L, (old, inc) -> old + inc));
     }
 
     private void tryScanNextLinks(Stream<String> links) {
         final List<CrawlerCounter> nextCrawlers = links
-                .peek(uri -> simplifyUri(uri).ifPresent(visitedUri::add))
+                .peek(uri -> crawlerUtil.simplifyUri(uri).ifPresent(visitedUri::add))
                 .map(uri -> {
                     CrawlerCounter nextCrawler = forkTask();
                     nextCrawler.setBaseUri(baseUri);
@@ -156,7 +160,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
 
     private Predicate<String> buildPredicateByVisitedUri() {
         return uri -> {
-            final Optional<String> value = simplifyUri(uri);
+            final Optional<String> value = crawlerUtil.simplifyUri(uri);
             if (value.isPresent() && !visitedUri.contains(value.get())) {
                 return true;
             } else if (value.isPresent() && visitedUri.contains(value.get())) {

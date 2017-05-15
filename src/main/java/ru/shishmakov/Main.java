@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import ru.shishmakov.config.Config;
+import ru.shishmakov.config.AppConfig;
 import ru.shishmakov.core.RatingController;
 
 import java.lang.invoke.MethodHandles;
@@ -35,7 +35,7 @@ public class Main {
         logger.debug("Incoming parameters uri: {}, depth: {}", uri, depth);
 
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-            context.register(Config.class);
+            context.register(AppConfig.class);
             context.refresh();
             context.getBean(RatingController.class).startCrawler(uri, baseUri, depth);
         }

@@ -2,7 +2,13 @@ package ru.shishmakov;
 
 import com.google.common.collect.Lists;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import ru.shishmakov.config.AppConfig;
+import ru.shishmakov.util.CrawlerUtil;
 
+import javax.inject.Inject;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,12 +18,16 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static ru.shishmakov.util.CrawlerUtil.simplifyUri;
 
 /**
  * @author <a href="mailto:d.shishmakov@corp.nekki.ru">Shishmakov Dmitriy</a>
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = AppConfig.class)
 public class UriTest extends BaseTest {
+
+    @Inject
+    private CrawlerUtil crawlerUtil;
 
     @Test
     public void simplifyUriShouldNormalizeUniquePathsAndFilterBlank() throws Exception {
@@ -30,7 +40,7 @@ public class UriTest extends BaseTest {
                 "https://yandex.ru/maps/213/moscow",
                 "https://yandex.ru/maps/43/kazan");
 
-        final List<String> parsedUri = simplifyUri(
+        final List<String> parsedUri = crawlerUtil.simplifyUri(
                 "https://yandex.ru/", // equal 1
                 "https://yandex.ru", // equal 1
                 "https://yandex.ru:443/maps/213/moscow/",

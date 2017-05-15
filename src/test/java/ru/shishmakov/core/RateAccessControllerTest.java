@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import ru.shishmakov.BaseTest;
-import ru.shishmakov.config.Config;
+import ru.shishmakov.config.AppConfig;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
  * @author Dmitriy Shishmakov on 11.05.17
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = Config.class)
+@ContextConfiguration(classes = AppConfig.class)
 public class RateAccessControllerTest extends BaseTest {
 
     private ExecutorService pool;

@@ -4,9 +4,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import ru.shishmakov.config.AppConfig;
+import ru.shishmakov.util.CrawlerUtil;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -14,11 +20,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
-import static ru.shishmakov.util.CrawlerUtil.getStreamHrefLinks;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = AppConfig.class)
 public class JsoupExampleTest extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final String INNER_DOCUMENT_PATH = "src/test/resources/test_html.html";
+
+    @Inject
+    private CrawlerUtil crawlerUtil;
 
     @Test
     public void parseShouldParseHtmlFromString() {
@@ -83,7 +93,7 @@ public class JsoupExampleTest extends BaseTest {
         String baseUri = "http://jsoup.org";
         File input = new File(INNER_DOCUMENT_PATH);
         Document doc = Jsoup.parse(input, "UTF-8", baseUri);
-        List<String> links = getStreamHrefLinks(doc).collect(Collectors.toList());
+        List<String> links = crawlerUtil.getStreamHrefLinks(doc).collect(Collectors.toList());
         logger.info("\nSite links: {}", links);
 
         assertFalse("List of links is not empty", links.isEmpty());
@@ -96,7 +106,7 @@ public class JsoupExampleTest extends BaseTest {
         File input = new File(INNER_DOCUMENT_PATH);
         Document doc = Jsoup.parse(input, "UTF-8");
         doc.setBaseUri(baseUri);
-        List<String> links = getStreamHrefLinks(doc).collect(Collectors.toList());
+        List<String> links = crawlerUtil.getStreamHrefLinks(doc).collect(Collectors.toList());
         logger.info("\nSite links: {}", links);
 
         assertFalse("List of links is not empty", links.isEmpty());
