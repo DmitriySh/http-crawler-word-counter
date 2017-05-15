@@ -67,7 +67,7 @@ public class Word implements Comparable<Word> {
 
     private static Comparator<Word> buildMemberComparator() {
         return Comparator.comparing(Word::getQuantity, reverseOrder())
-                .thenComparing(w -> (long) w.getWord().length(), reverseOrder());
+                .thenComparing(w -> w.getWord().length(), reverseOrder());
     }
 
 }

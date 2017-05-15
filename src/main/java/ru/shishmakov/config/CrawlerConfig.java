@@ -11,15 +11,19 @@ import java.util.Set;
 @Sources({"file:config/crawler.properties", "classpath:config/crawler.properties"})
 public interface CrawlerConfig extends Config {
 
-    @DefaultValue("я, мы, ты, вы, он, она, оно, они")
+    @DefaultValue("я, мы, ты, вы, он, она, оно, они, i, am, you, are, he, she, it, we, they")
     @Key("acceptableWords")
     Set<String> acceptableWords();
 
-    @DefaultValue("['\'\"\\!\\?\\.\\:\\;\\,\\\\]")
+    @DefaultValue("[\\|\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\]")
     @Key("illegalCharacters")
     String illegalCharacters();
 
     @DefaultValue("3")
     @Key("minSymbols")
     int minAcceptableCountSymbols();
+
+    @DefaultValue("100")
+    @Key("topRating")
+    int topRating();
 }
