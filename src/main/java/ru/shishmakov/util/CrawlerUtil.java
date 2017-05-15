@@ -9,23 +9,34 @@ import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.shishmakov.config.CrawlerConfig;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.commons.lang3.StringUtils.SPACE;
+import static org.apache.commons.lang3.StringUtils.*;
 
 /**
  * @author <a href="mailto:d.shishmakov@corp.nekki.ru">Shishmakov Dmitriy</a>
  */
 public class CrawlerUtil {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    @Inject
+    private CrawlerConfig crawlerConfig;
+
+    private Pattern illegalCharacters;
+
+    @PostConstruct
+    public void setUp() {
+        illegalCharacters = Pattern.compile(crawlerConfig.illegalCharacters());
+    }
 
     public List<String> simplifyUri(String... sourceUri) {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
@@ -64,18 +75,16 @@ public class CrawlerUtil {
         new NodeTraversor(new NodeVisitor() {
             @Override
             public void head(Node node, int depth) {
-                if (node instanceof TextNode) {
-                    TextNode textNode = (TextNode) node;
-                    String text = StringUtils.trimToNull(textNode.getWholeText());
-                    if (StringUtils.isNotBlank(text)) {
-                        for (String str : StringUtils.split(text, SPACE)) {
-                            str = StringUtils.normalizeSpace(str);
-                            if (StringUtils.isNotBlank(str)) {
-                                data.add(str);
-                            }
-                        }
-                    }
-                }
+                Stream.of(node)
+                        .filter(n -> n instanceof TextNode)
+                        .map(n -> ((TextNode) n).getWholeText())
+                        .map(t -> illegalCharacters.matcher(t).replaceAll(""))
+                        .map(StringUtils::normalizeSpace)
+                        .flatMap(t -> Arrays.stream(split(t, SPACE)))
+                        .filter(StringUtils::isNotBlank)
+                        .filter(t -> length(t) >= crawlerConfig.minAcceptableCountSymbols() ||
+                                crawlerConfig.acceptableWords().contains(t))
+                        .forEach(data::add);
             }
 
             @Override
