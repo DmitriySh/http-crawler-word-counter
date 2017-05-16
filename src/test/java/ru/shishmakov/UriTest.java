@@ -10,7 +10,6 @@ import ru.shishmakov.util.CrawlerUtil;
 
 import javax.inject.Inject;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -31,12 +30,9 @@ public class UriTest extends BaseTest {
 
     @Test
     public void simplifyUriShouldNormalizeUniquePathsAndFilterBlank() throws Exception {
-        final ArrayList<String> expectedUri = Lists.newArrayList("https://yandex.ru",
-                "https://yandex.ru",
+        final List<String> expectedUri = Lists.newArrayList(
                 "https://yandex.ru",
                 "https://yandex.ru:443/maps/213/moscow",
-                "https://yandex.ru/maps/213/moscow",
-                "https://yandex.ru/maps/213/moscow",
                 "https://yandex.ru/maps/213/moscow",
                 "https://yandex.ru/maps/43/kazan");
 
@@ -50,7 +46,7 @@ public class UriTest extends BaseTest {
                 "https://yandex.ru/maps/43/kazan/?mode=search&text=kazan",
                 EMPTY, SPACE, null);
 
-        assertEquals("Invalid number of unique URLs", new HashSet<>(expectedUri).size(), new HashSet<>(parsedUri).size());
+        assertEquals("Invalid number of unique URLs", expectedUri.size(), new HashSet<>(parsedUri).size());
         assertTrue("Invalid number of unique URLs", parsedUri.stream().allMatch(expectedUri::contains));
     }
 
