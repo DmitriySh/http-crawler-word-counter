@@ -5,9 +5,13 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.shishmakov.config.CrawlerConfig;
+import ru.shishmakov.util.CrawlerUtil;
 
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinPool;
@@ -26,13 +30,16 @@ public class RatingController {
     private ConcurrentMap<String, Long> wordCounter;
     @Inject
     private CrawlerConfig crawlerConfig;
+    @Inject
+    private CrawlerUtil crawlerUtil;
 
-    public void startCrawler(String uri, String baseUri, int depth) {
+    public void startCrawler(String uri, int depth) throws MalformedURLException, URISyntaxException {
         ForkJoinPool pool = new ForkJoinPool();
         try {
             logger.debug("Invoke crawler task ...");
-            crawlerCounter.setUri(uri);
-            crawlerCounter.setBaseUri(baseUri);
+            URI obj = new URI(uri);
+            crawlerCounter.setUri(obj.normalize().toString());
+            crawlerCounter.setBaseUri(crawlerUtil.getBaseUri(obj));
             crawlerCounter.setDepth(depth);
 
             pool.invoke(crawlerCounter);

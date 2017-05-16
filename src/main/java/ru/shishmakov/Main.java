@@ -9,7 +9,7 @@ import ru.shishmakov.core.RatingController;
 
 import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URISyntaxException;
 
 /**
  * @author Dmitriy Shishmakov on 12.05.17
@@ -27,17 +27,15 @@ public class Main {
         logger.info("End http-crawler process");
     }
 
-    private static void process(String[] args) throws MalformedURLException {
+    private static void process(String[] args) throws MalformedURLException, URISyntaxException {
         String uri = StringUtils.trimToEmpty(args[0]);
         int depth = Integer.valueOf(args[1]);
-        URL url = new URL(uri);
-        String baseUri = new URL(url.getProtocol(), url.getHost(), url.getPort(), "").toString();
         logger.debug("Incoming parameters uri: {}, depth: {}", uri, depth);
 
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
             context.register(AppConfig.class);
             context.refresh();
-            context.getBean(RatingController.class).startCrawler(uri, baseUri, depth);
+            context.getBean(RatingController.class).startCrawler(uri, depth);
         }
     }
 }

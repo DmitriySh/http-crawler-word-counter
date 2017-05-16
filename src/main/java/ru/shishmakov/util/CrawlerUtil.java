@@ -14,6 +14,8 @@ import ru.shishmakov.config.CrawlerConfig;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -63,6 +65,10 @@ public class CrawlerUtil {
                 .map(el -> el.attr("abs:href"))
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull);
+    }
+
+    public String getBaseUri(URI uri) throws URISyntaxException {
+        return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString();
     }
 
     /**

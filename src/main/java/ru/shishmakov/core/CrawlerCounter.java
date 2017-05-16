@@ -13,6 +13,8 @@ import ru.shishmakov.util.CrawlerUtil;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
@@ -140,12 +142,20 @@ public abstract class CrawlerCounter extends RecursiveAction {
         final List<CrawlerCounter> nextCrawlers = links
                 .peek(uri -> crawlerUtil.simplifyUri(uri).ifPresent(visitedUri::add))
                 .map(uri -> {
-                    CrawlerCounter nextCrawler = forkTask();
-                    nextCrawler.setBaseUri(baseUri);
-                    nextCrawler.setUri(uri);
-                    nextCrawler.setDepth(depth - 1);
-                    return nextCrawler;
-                }).collect(Collectors.toList());
+                    try {
+                        URI obj = new URI(uri);
+                        CrawlerCounter nextCrawler = forkTask();
+                        nextCrawler.setUri(obj.normalize().toString());
+                        nextCrawler.setBaseUri(crawlerUtil.getBaseUri(obj));
+                        nextCrawler.setDepth(depth - 1);
+                        return nextCrawler;
+                    } catch (URISyntaxException e) {
+                        logger.error("{}: {} error define new task with uri: {}", NAME, number, uri);
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
         invokeAll(nextCrawlers);
     }
 

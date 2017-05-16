@@ -9,6 +9,7 @@ import ru.shishmakov.config.AppConfig;
 import ru.shishmakov.util.CrawlerUtil;
 
 import javax.inject.Inject;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
@@ -53,9 +54,32 @@ public class UriTest extends BaseTest {
     @Test
     public void baseUriShouldBeEqual() throws Exception {
         final String sourceUrl = "http://jsoup.org";
-        final URL url = new URL(sourceUrl);
+        URI uri = new URI(sourceUrl);
+        String baseUri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString();
+        assertEquals("Base uri should be equal", sourceUrl, baseUri);
+    }
+
+    @Test
+    public void name() throws Exception {
+        String source = "https://yandex.ru/sub1/sub2/../../moscow";
+        String source2 = "https://yandex.ru/maps/213/moscow/?rtext=&rtt=auto&mode=routes";
+        URI uri = new URI(source);
+        URI uriRelative = new URI("../../moscow");
+        URL url = new URL(source);
+        URL url2 = new URL(source2);
+        URI uri2 = new URI(source2);
         final String baseUri = new URL(url.getProtocol(), url.getHost(), url.getPort(), "").toString();
 
-        assertEquals("Base uri should be equal", sourceUrl, baseUri);
+        logger.info("baseUri: {}", baseUri);
+
+        logger.info("uri: {}", uri);
+        logger.info("uri normalize: {}", uri.normalize());
+        logger.info("uriRelative normalize: {}", uriRelative.normalize());
+        logger.info("uriRelative resolve: {}", uriRelative.resolve("https://yandex.ru/sub1/sub2"));
+        logger.info("uriRelative relativize: {}", uriRelative.relativize(URI.create("https://yandex.ru/sub1/sub2")));
+
+
+        logger.info("url: {}", url);
+        logger.info("url toExternalForm: {}", url.toExternalForm());
     }
 }
