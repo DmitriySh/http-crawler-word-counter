@@ -1,7 +1,9 @@
 package ru.shishmakov.core;
 
 import com.google.common.base.MoreObjects;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,7 +20,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -99,7 +100,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
         final StopWatch watch = StopWatch.createStarted();
         logger.info("{}: {} starting task [uri: {}, depth: {}] ...", NAME, number, uri, depth);
         try {
-            parseUri();
+            parseLink();
         } catch (Exception e) {
             logger.error("{}: {} error request on uri: {}", NAME, number, uri, e);
         }
@@ -117,41 +118,42 @@ public abstract class CrawlerCounter extends RecursiveAction {
                 .toString();
     }
 
-    private void parseUri() throws Exception {
-        Document doc = accessController.acquireAccess(buildRequestTask());
+    private void parseLink() throws Exception {
+        Callable<Document> task = buildRequestTask();
+        Document doc = accessController.acquireAccess(task);
         countElementWords(doc.body());
-        if (visitedUri.isEmpty()) crawlerUtil.simplifyUri(uri).ifPresent(visitedUri::add); // root of requests
+        if (visitedUri.isEmpty()) visitedUri.add(crawlerUtil.simplifyUri(uri)); // root of requests
 
         if (depth - 1 > 0) {
-            Stream<String> links = crawlerUtil.getStreamHrefLinks(doc)
-                    .filter(buildPredicateByBaseUri())
-                    .filter(buildPredicateByVisitedUri());
-            tryScanNextLinks(links);
+            tryParseNextLinks(crawlerUtil.getStreamHrefLinks(doc));
         }
     }
 
     private void countElementWords(Element element) {
         if (Objects.isNull(element)) {
-            logger.warn("{}: {} skips uri: {}; site has no body element", NAME, number, uri);
+            logger.warn("{}: {} skips uri: {}; site has no element", NAME, number, uri);
             return;
         }
         List<String> textList = crawlerUtil.getText(element);
         textList.forEach(t -> wordCounter.merge(lowerCase(t), 1L, (old, inc) -> old + inc));
     }
 
-    private void tryScanNextLinks(Stream<String> links) {
+    private void tryParseNextLinks(Stream<String> links) {
         final List<CrawlerCounter> nextCrawlers = links
-                .peek(uri -> crawlerUtil.simplifyUri(uri).ifPresent(visitedUri::add))
-                .map(uri -> {
+                .map(uri -> Pair.of(uri, crawlerUtil.simplifyUri(uri)))
+                .filter(isLegalBaseHost())
+                .filter(isNotEmail())
+                .filter(isNotVisitedUri())
+                .map(p -> {
                     try {
-                        URI obj = new URI(uri);
+                        URI obj = new URI(p.getKey());
                         CrawlerCounter nextCrawler = forkTask();
                         nextCrawler.setUri(obj.normalize().toString());
                         nextCrawler.setBaseUri(crawlerUtil.getBaseUri(obj));
                         nextCrawler.setDepth(depth - 1);
                         return nextCrawler;
                     } catch (URISyntaxException e) {
-                        logger.error("{}: {} error define new task with uri: {}", NAME, number, uri);
+                        logger.error("{}: {} error define new task with uri: {}", NAME, number, p.getKey());
                     }
                     return null;
                 })
@@ -169,21 +171,24 @@ public abstract class CrawlerCounter extends RecursiveAction {
         };
     }
 
-    private Predicate<String> buildPredicateByVisitedUri() {
-        return uri -> {
-            final Optional<String> value = crawlerUtil.simplifyUri(uri);
-            if (value.isPresent() && !visitedUri.contains(value.get())) {
+    private Predicate<Pair<String, String>> isNotVisitedUri() {
+        return p -> {
+            if (visitedUri.contains(p.getValue())) return false;
+            else {
+                visitedUri.add(p.getValue());
                 return true;
-            } else if (value.isPresent() && visitedUri.contains(value.get())) {
-                return false;
-            } else return false;
+            }
         };
     }
 
-    private Predicate<String> buildPredicateByBaseUri() {
-        return uri -> {
+    private Predicate<Pair<String, String>> isNotEmail() {
+        return p -> !StringUtils.contains(p.getKey(), '@');
+    }
+
+    private Predicate<Pair<String, String>> isLegalBaseHost() {
+        return p -> {
             try {
-                return equalsIgnoreCase(new URL(baseUri).getHost(), new URL(uri).getHost());
+                return equalsIgnoreCase(new URL(baseUri).getHost(), new URL(p.getKey()).getHost());
             } catch (MalformedURLException e) {
                 logger.error("Error on define host of uri", e);
                 return false;
