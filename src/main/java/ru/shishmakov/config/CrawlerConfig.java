@@ -12,18 +12,26 @@ import java.util.Set;
 public interface CrawlerConfig extends Config {
 
     @DefaultValue("я, мы, ты, вы, он, она, оно, они, i, am, you, are, he, she, it, we, they")
-    @Key("acceptableWords")
+    @Key("legal.words")
     Set<String> acceptableWords();
 
-    @DefaultValue("[\\|\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\]")
-    @Key("illegalCharacters")
-    String illegalCharacters();
-
     @DefaultValue("3")
-    @Key("minSymbols")
+    @Key("legal.minSymbols")
     int minAcceptableCountSymbols();
 
+    @DefaultValue("[\\|\\«\\»\'\"\\!\\?\\.\\:\\;\\,\\[\\]{}()+/\\\\]")
+    @Key("illegal.pattern")
+    String illegalCharactersPattern();
+
+    @DefaultValue("20")
+    @Key("rps")
+    int requestPerSecond();
+
     @DefaultValue("100")
-    @Key("topRating")
+    @Key("top.count")
     int topRating();
+
+    @DefaultValue("3000")
+    @Key("request.timeout")
+    int requestTimeoutMs();
 }

@@ -37,7 +37,7 @@ public class CrawlerUtil {
 
     @PostConstruct
     public void setUp() {
-        illegalCharacters = Pattern.compile(crawlerConfig.illegalCharacters());
+        illegalCharacters = Pattern.compile(crawlerConfig.illegalCharactersPattern());
     }
 
     public List<String> simplifyUri(String... sourceUri) {

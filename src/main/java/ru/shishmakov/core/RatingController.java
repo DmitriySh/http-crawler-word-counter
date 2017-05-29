@@ -43,14 +43,14 @@ public class RatingController {
             crawlerCounter.setDepth(depth);
 
             pool.invoke(crawlerCounter);
-            printTopWords(wordCounter);
+            printTopWords();
         } finally {
             MoreExecutors.shutdownAndAwaitTermination(pool, 30, SECONDS);
         }
 
     }
 
-    private void printTopWords(ConcurrentMap<String, Long> wordCounter) {
+    private void printTopWords() {
         final MinMaxPriorityQueue<Word> top = MinMaxPriorityQueue
                 .expectedSize(crawlerConfig.topRating())
                 .create();

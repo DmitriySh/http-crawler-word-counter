@@ -2,11 +2,10 @@ package ru.shishmakov.core;
 
 
 import com.google.common.base.MoreObjects;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Comparator.reverseOrder;
@@ -38,18 +37,13 @@ public class Word implements Comparable<Word> {
         if (this == o) return true;
         if (!(o instanceof Word)) return false;
         Word other = (Word) o;
-        return new EqualsBuilder()
-                .append(quantity, other.quantity)
-                .append(word, other.word)
-                .isEquals();
+        return Objects.equals(this.quantity, other.quantity) &&
+                Objects.equals(this.word, other.word);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(word)
-                .append(quantity)
-                .toHashCode();
+        return Objects.hash(word, quantity);
     }
 
     @Override

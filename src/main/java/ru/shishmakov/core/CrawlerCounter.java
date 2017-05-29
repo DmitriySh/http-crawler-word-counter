@@ -53,6 +53,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     @Inject
     private CrawlerConfig crawlerConfig;
 
+
     private String baseUri;
     private String uri;
     private int depth;
@@ -162,7 +163,7 @@ public abstract class CrawlerCounter extends RecursiveAction {
     private Callable<Document> buildRequestTask() {
         return () -> {
             URL url = new URL(uri);
-            Document doc = Jsoup.parse(url, 3_000);
+            Document doc = Jsoup.parse(url, crawlerConfig.requestTimeoutMs());
             doc.setBaseUri(baseUri);
             return doc;
         };
