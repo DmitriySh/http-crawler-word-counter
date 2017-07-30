@@ -14,6 +14,8 @@ import ru.shishmakov.config.CrawlerConfig;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,26 +37,27 @@ public class CrawlerUtil {
 
     @PostConstruct
     public void setUp() {
-        illegalCharacters = Pattern.compile(crawlerConfig.illegalCharacters());
+        illegalCharacters = Pattern.compile(crawlerConfig.illegalCharactersPattern());
     }
 
     public List<String> simplifyUri(String... sourceUri) {
         checkArgument(sourceUri.length > 0, "list source uri is empty");
         final List<String> temp = new ArrayList<>(sourceUri.length);
         for (String uri : sourceUri) {
-            simplifyUri(uri).ifPresent(temp::add);
+            temp.add(simplifyUri(uri));
         }
         return temp;
     }
 
-    public Optional<String> simplifyUri(String sourceUri) {
-        return Stream.of(sourceUri)
+    public String simplifyUri(String sourceUri) {
+        return Optional.of(sourceUri)
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)
-                .map(s -> StringUtils.substringBefore(s, "?"))
+                .map(s -> StringUtils.substringBefore(s, "?")) // arguments
+                .map(s -> StringUtils.substringBefore(s, "#")) // anchor
                 .map(s -> StringUtils.removeEnd(s, "/"))
                 .map(StringUtils::lowerCase)
-                .findFirst();
+                .orElseThrow(() -> new IllegalArgumentException("Illegal simplify sourceUri: " + sourceUri));
 
     }
 
@@ -63,6 +66,10 @@ public class CrawlerUtil {
                 .map(el -> el.attr("abs:href"))
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull);
+    }
+
+    public String getBaseUri(URI uri) throws URISyntaxException {
+        return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString();
     }
 
     /**

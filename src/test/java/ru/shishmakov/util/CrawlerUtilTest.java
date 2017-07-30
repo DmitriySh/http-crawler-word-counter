@@ -17,7 +17,7 @@ public class CrawlerUtilTest {
         CrawlerConfig config = ConfigFactory.create(CrawlerConfig.class);
 
         assertNotNull("Config should not be null", config);
-        assertNotNull("Pattern of illegal symbols should be defined", config.illegalCharacters());
+        assertNotNull("Pattern of illegal symbols should be defined", config.illegalCharactersPattern());
         assertNotNull("Set of acceptable symbols should be defined ", config.acceptableWords());
         assertTrue("Number of symbols should be more than one", config.minAcceptableCountSymbols() > 1);
     }
